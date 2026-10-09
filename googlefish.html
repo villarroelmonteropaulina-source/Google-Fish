@@ -2,13 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Fish - Multilingual</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Google Fish - Mobile Friendly</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            touch-action: none; /* Evita scrolls y zoom accidentales en móviles */
         }
         body, html {
             width: 100%;
@@ -18,24 +19,28 @@
             background: #001e3d;
             color: white;
             user-select: none;
+            -webkit-user-select: none;
         }
         #game-container {
             position: relative;
             width: 100vw;
             height: 100vh;
             cursor: crosshair;
+            overflow: hidden;
         }
         canvas {
             display: block;
             background: linear-gradient(to bottom, #005c8a, #001e3d 70%, #000b1a);
+            width: 100%;
+            height: 100%;
         }
-        /* HUD y UI */
+        /* HUD y UI Adaptado */
         #ui {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            padding: 20px;
+            padding: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -43,15 +48,15 @@
             z-index: 10;
         }
         .hud-box {
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(5px);
-            padding: 10px 20px;
-            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            padding: 8px 14px;
+            border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
             display: flex;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
             pointer-events: auto;
         }
@@ -67,17 +72,20 @@
         /* Selector de Idiomas */
         .language-selector {
             display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
+            gap: 6px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 90vw;
         }
         .lang-btn {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
-            padding: 6px 12px;
-            border-radius: 8px;
+            padding: 5px 10px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             transition: all 0.2s;
         }
         .lang-btn:hover, .lang-btn.active {
@@ -85,7 +93,7 @@
             border-color: #4285F4;
         }
 
-        /* Menú de selección */
+        /* Menú de selección optimizado para pantallas táctiles */
         #menu-overlay {
             position: absolute;
             top: 0;
@@ -99,71 +107,73 @@
             align-items: center;
             z-index: 100;
             transition: opacity 0.5s ease;
+            padding: 15px;
+            overflow-y: auto;
         }
         h1 {
-            font-size: 4rem;
-            margin-bottom: 10px;
+            font-size: 2.5rem;
+            margin-bottom: 5px;
             text-align: center;
             text-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         p.subtitle {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
             color: #a0c4df;
             text-align: center;
-            padding: 0 20px;
+            max-width: 400px;
         }
         .character-selection {
             display: flex;
-            gap: 25px;
-            margin-bottom: 30px;
+            gap: 12px;
+            margin-bottom: 25px;
             flex-wrap: wrap;
             justify-content: center;
         }
         .char-card {
             background: rgba(255, 255, 255, 0.07);
             border: 2px solid rgba(255, 255, 255, 0.15);
-            border-radius: 16px;
-            padding: 20px;
-            width: 180px;
+            border-radius: 12px;
+            padding: 12px;
+            width: 100px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
         }
         .char-card:hover, .char-card.selected {
-            background: rgba(66, 133, 244, 0.2);
+            background: rgba(66, 133, 244, 0.25);
             border-color: #4285F4;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(66, 133, 244, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(66, 133, 244, 0.3);
         }
         .char-icon {
-            font-size: 3rem;
-            margin-bottom: 10px;
-        }
-        .char-name {
-            font-size: 1.1rem;
-            font-weight: bold;
+            font-size: 2rem;
             margin-bottom: 5px;
         }
+        .char-name {
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
         .char-desc {
-            font-size: 0.8rem;
+            font-size: 0.65rem;
             color: #b0c4de;
+            line-height: 1.2;
         }
         .btn-play {
             background: #34A853;
             color: white;
             border: none;
-            padding: 15px 40px;
-            font-size: 1.3rem;
+            padding: 12px 30px;
+            font-size: 1.1rem;
             font-weight: bold;
-            border-radius: 30px;
+            border-radius: 25px;
             cursor: pointer;
-            box-shadow: 0 6px 20px rgba(52, 168, 83, 0.4);
+            box-shadow: 0 5px 15px rgba(52, 168, 83, 0.4);
             transition: all 0.2s ease;
         }
-        .btn-play:hover {
-            background: #2e9248;
-            transform: scale(1.05);
+        .btn-play:active {
+            transform: scale(0.95);
         }
 
         /* Pantalla de Fin de Juego */
@@ -180,26 +190,41 @@
             align-items: center;
             z-index: 100;
             display: none;
+            padding: 20px;
+            text-align: center;
         }
         #end-overlay h2 {
-            font-size: 3rem;
-            margin-bottom: 15px;
+            font-size: 2rem;
+            margin-bottom: 12px;
             color: #ff5252;
         }
         #end-overlay p {
-            font-size: 1.2rem;
-            margin-bottom: 25px;
+            font-size: 1rem;
+            margin-bottom: 20px;
             color: #ccc;
         }
         
         .controls-hint {
             position: absolute;
-            bottom: 20px;
+            bottom: 10px;
             width: 100%;
             text-align: center;
             color: rgba(255,255,255,0.6);
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             pointer-events: none;
+            padding: 0 10px;
+        }
+
+        /* Ajustes específicos para pantallas más amplias (Tablets / Escritorio) */
+        @media(min-width: 600px) {
+            h1 { font-size: 3.5rem; }
+            .char-card { width: 160px; padding: 18px; }
+            .char-icon { font-size: 2.8rem; }
+            .char-name { font-size: 1rem; }
+            .char-desc { font-size: 0.75rem; }
+            p.subtitle { font-size: 1.1rem; }
+            .hud-box { font-size: 16px; padding: 10px 18px; }
+            .controls-hint { font-size: 0.85rem; bottom: 15px; }
         }
     </style>
 </head>
@@ -212,7 +237,8 @@
         <div class="language-selector">
             <button class="lang-btn active" onclick="setLanguage('es')">Español</button>
             <button class="lang-btn" onclick="setLanguage('en')">English</button>
-            <button class="lang-btn" onclick="setLanguage('pt')">Português</button>
+            <button class="lang-btn" onclick="setLanguage('fr')">Français</button>
+            <button class="lang-btn" onclick="setLanguage('qu')">Runasimi</button>
         </div>
 
         <h1>
@@ -261,13 +287,12 @@
         </div>
     </div>
 
-    <div class="controls-hint" id="txt-controls">Mueve el cursor o el dedo para nadar. Come presas más pequeñas y evita las más grandes.</div>
+    <div class="controls-hint" id="txt-controls">Desliza el dedo o mueve el cursor para nadar. Come presas menores y evita las mayores.</div>
 
     <canvas id="oceanCanvas"></canvas>
 </div>
 
 <script>
-    // Diccionario de Traducciones
     const translations = {
         es: {
             subtitle: "Elige tu criatura oceánica y sobrevive comiendo peces más pequeños",
@@ -282,7 +307,7 @@
             hudCreature: "Criatura",
             hudSize: "Tamaño",
             hudScore: "Puntos",
-            controls: "Mueve el cursor o el dedo para nadar. Come presas más pequeñas y evita las más grandes.",
+            controls: "Desliza el dedo o mueve el cursor para nadar. Come presas menores y evita las mayores.",
             gameOver: "¡Te ha devorado un depredador mayor!",
             finalSize: "Tamaño final"
         },
@@ -299,26 +324,43 @@
             hudCreature: "Creature",
             hudSize: "Size",
             hudScore: "Score",
-            controls: "Move cursor or finger to swim. Eat smaller prey and avoid larger ones.",
+            controls: "Drag your finger or move cursor to swim. Eat smaller prey and avoid larger ones.",
             gameOver: "You were devoured by a larger predator!",
             finalSize: "Final size"
         },
-        pt: {
-            subtitle: "Escolha sua criatura oceânica e sobreviva comendo peixes menores",
-            fishName: "Peixe-Palhaço",
-            fishDesc: "Ágil e rápido. Tamanho inicial pequeno.",
-            sharkName: "Tubarão",
-            sharkDesc: "Predador nato. Cresce rápido caçando.",
-            whaleName: "Baleia",
-            whaleDesc: "Gigante do mar. Come em massa.",
-            playBtn: "Mergulhar!",
-            restartBtn: "Jogar Novamente",
-            hudCreature: "Criatura",
-            hudSize: "Tamanho",
-            hudScore: "Pontos",
-            controls: "Mova o cursor ou o dedo para nadar. Coma presas menores e evite as maiores.",
-            gameOver: "Você foi devorado por um predador maior!",
-            finalSize: "Tamanho final"
+        fr: {
+            subtitle: "Choisissez votre créature marine et survivez en mangeant des poissons plus petits",
+            fishName: "Poisson-Clown",
+            fishDesc: "Agile et rapide. Petite taille de départ.",
+            sharkName: "Requin",
+            sharkDesc: "Prédateur né. Grandit vite en chassant.",
+            whaleName: "Baleine",
+            whaleDesc: "Géant des mers. Mange en masse.",
+            playBtn: "Plonger !",
+            restartBtn: "Rejouer",
+            hudCreature: "Créature",
+            hudSize: "Taille",
+            hudScore: "Score",
+            controls: "Glissez le doigt ou déplacez le curseur pour nager. Mangez les proies plus petites.",
+            gameOver: "Vous avez été dévoré par un prédateur plus grand !",
+            finalSize: "Taille finale"
+        },
+        qu: {
+            subtitle: "Qucha uywaykita akllay chaymanta sullk'a challwakunata mikhuspa kawsay",
+            fishName: "Challwacha",
+            fishDesc: "K'uchipampa utqaylla. Pisi qallariynin sayay.",
+            sharkName: "Hatun Challwa",
+            sharkDesc: "Apaykachana suwa. Uqarisqa hatunyapun.",
+            whaleName: "Hatun Qucha Mama",
+            whaleDesc: "Quchap hatunnin. Askha mikhuna.",
+            playBtn: "Unuman yaykuy!",
+            restartBtn: "Musmanta pukllay",
+            hudCreature: "Uywa",
+            hudSize: "Sayay",
+            hudScore: "Puntukuna",
+            controls: "Ruk'anawan kuyuchiy. Sullk'a challwakunata mikhuy, hatunkunamanta ayqiy.",
+            gameOver: "¡Hatun mikhuykuqmi mikhuśunki!",
+            finalSize: "Tukupay sayay"
         }
     };
 
@@ -327,9 +369,8 @@
     function setLanguage(lang) {
         currentLang = lang;
         document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
+        if (event && event.target) event.target.classList.add('active');
 
-        // Actualizar textos de UI
         document.getElementById('txt-subtitle').innerText = translations[lang].subtitle;
         document.getElementById('btn-play-text').innerText = translations[lang].playBtn;
         document.getElementById('btn-restart-text').innerText = translations[lang].restartBtn;
@@ -338,7 +379,6 @@
         document.getElementById('hud-label-score').innerText = translations[lang].hudScore;
         document.getElementById('txt-controls').innerText = translations[lang].controls;
 
-        // Tarjetas
         document.querySelector('[data-key="fishName"]').innerText = translations[lang].fishName;
         document.querySelector('[data-key="fishDesc"]').innerText = translations[lang].fishDesc;
         document.querySelector('[data-key="sharkName"]').innerText = translations[lang].sharkName;
@@ -346,7 +386,6 @@
         document.querySelector('[data-key="whaleName"]').innerText = translations[lang].whaleName;
         document.querySelector('[data-key="whaleDesc"]').innerText = translations[lang].whaleDesc;
 
-        // Actualizar nombre de criatura actual si aplica
         if (selectedType === 'fish') player.name = translations[lang].fishName;
         if (selectedType === 'shark') player.name = translations[lang].sharkName;
         if (selectedType === 'whale') player.name = translations[lang].whaleName;
@@ -368,15 +407,13 @@
 
     let selectedType = 'fish';
     let player = {
-        x: canvas.width / 2,
-        y: canvas.height / 2,
+        x: window.innerWidth / 2,
+        y: window.innerHeight / 2,
         size: 15,
-        speed: 0.05,
+        speed: 0.06,
         score: 0,
         emoji: '🐠',
-        name: 'Pez Payaso',
-        vx: 0,
-        vy: 0
+        name: 'Pez Payaso'
     };
 
     let targetX = player.x;
@@ -387,9 +424,9 @@
     let bubbles = [];
 
     const characterData = {
-        fish: { emoji: '🐠', key: 'fishName', baseSize: 15, speed: 0.06 },
-        shark: { emoji: '🦈', key: 'sharkName', baseSize: 25, speed: 0.045 },
-        whale: { emoji: '🐋', key: 'whaleName', baseSize: 35, speed: 0.035 }
+        fish: { emoji: '🐠', key: 'fishName', baseSize: 15, speed: 0.07 },
+        shark: { emoji: '🦈', key: 'sharkName', baseSize: 25, speed: 0.05 },
+        whale: { emoji: '🐋', key: 'whaleName', baseSize: 35, speed: 0.04 }
     };
 
     function selectCharacter(type, element) {
@@ -423,15 +460,15 @@
         particles = [];
         bubbles = [];
 
-        for(let i=0; i<25; i++) {
+        for(let i=0; i<20; i++) {
             spawnCreature(true);
         }
-        for(let i=0; i<15; i++) {
+        for(let i=0; i<12; i++) {
             bubbles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                radius: Math.random() * 4 + 1,
-                speed: Math.random() * 1.5 + 0.5
+                radius: Math.random() * 3 + 1,
+                speed: Math.random() * 1 + 0.4
             });
         }
 
@@ -439,17 +476,26 @@
         loop();
     }
 
-    window.addEventListener('mousemove', (e) => {
+    // Eventos de ratón y táctiles universales
+    function updateTarget(clientX, clientY) {
         if (!gameRunning) return;
-        targetX = e.clientX;
-        targetY = e.clientY;
-    });
+        targetX = clientX;
+        targetY = clientY;
+    }
 
+    window.addEventListener('mousemove', (e) => updateTarget(e.clientX, e.clientY));
+    
     window.addEventListener('touchmove', (e) => {
-        if (!gameRunning) return;
-        targetX = e.touches[0].clientX;
-        targetY = e.touches[0].clientY;
-    });
+        if (e.touches.length > 0) {
+            updateTarget(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 0) {
+            updateTarget(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: true });
 
     const preyEmojis = ['🦐', '🦀', '🦑', '🐠', '🐟', '🐡', '🐬'];
 
@@ -477,8 +523,8 @@
             else { x = Math.random() * canvas.width; y = canvas.height + 50; }
         }
 
-        let speed = (2 + Math.random() * 2) * (player.size / size * 0.3 + 0.5);
-        if (speed < 1) speed = 1;
+        let speed = (1.5 + Math.random() * 2) * (player.size / size * 0.3 + 0.5);
+        if (speed < 0.8) speed = 0.8;
 
         creatures.push({
             x: x,
@@ -492,13 +538,13 @@
     }
 
     function createParticles(x, y) {
-        for(let i=0; i<8; i++) {
+        for(let i=0; i<6; i++) {
             particles.push({
                 x: x,
                 y: y,
-                vx: (Math.random() - 0.5) * 4,
-                vy: (Math.random() - 0.5) * 4,
-                radius: Math.random() * 3 + 1,
+                vx: (Math.random() - 0.5) * 3,
+                vy: (Math.random() - 0.5) * 3,
+                radius: Math.random() * 2.5 + 1,
                 alpha: 1
             });
         }
@@ -548,13 +594,13 @@
         if (dx < 0) {
             ctx.scale(-1, 1);
         }
-        ctx.font = `${Math.max(16, player.size * 1.8)}px sans-serif`;
+        ctx.font = `${Math.max(16, player.size * 1.6)}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(player.emoji, 0, 0);
         ctx.restore();
 
-        if (creatures.length < 30 && Math.random() < 0.05) {
+        if (creatures.length < 25 && Math.random() < 0.05) {
             spawnCreature();
         }
 
@@ -574,7 +620,7 @@
             if (c.vx < 0) {
                 ctx.scale(-1, 1);
             }
-            ctx.font = `${Math.max(12, c.size * 1.6)}px sans-serif`;
+            ctx.font = `${Math.max(12, c.size * 1.5)}px sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(c.emoji, 0, 0);
@@ -596,7 +642,7 @@
                 }
             }
 
-            if (c.x < -150 || c.x > canvas.width + 150 || c.y < -150 || c.y > canvas.height + 150) {
+            if (c.x < -120 || c.x > canvas.width + 120 || c.y < -120 || c.y > canvas.height + 120) {
                 creatures.splice(i, 1);
             }
         }
