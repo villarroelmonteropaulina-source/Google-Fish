@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Fish - Multilingual</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #001e3d;
+            color: white;
+            user-select: none;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+        }
+        canvas {
+            display: block;
+            background: linear-gradient(to bottom, #005c8a, #001e3d 70%, #000b1a);
+        }
+        /* HUD y UI */
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .hud-box {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            pointer-events: auto;
+        }
+        .google-brand {
+            font-weight: 900;
+            letter-spacing: -1px;
+        }
+        .g-blue { color: #4285F4; }
+        .g-red { color: #EA4335; }
+        .g-yellow { color: #FBBC05; }
+        .g-green { color: #34A853; }
+
+        /* Selector de Idiomas */
+        .language-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .lang-btn:hover, .lang-btn.active {
+            background: #4285F4;
+            border-color: #4285F4;
+        }
+
+        /* Menú de selección */
+        #menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #003366 0%, #001020 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s ease;
+        }
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            text-align: center;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        p.subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #a0c4df;
+            text-align: center;
+            padding: 0 20px;
+        }
+        .character-selection {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .char-card {
+            background: rgba(255, 255, 255, 0.07);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 20px;
+            width: 180px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .char-card:hover, .char-card.selected {
+            background: rgba(66, 133, 244, 0.2);
+            border-color: #4285F4;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(66, 133, 244, 0.3);
+        }
+        .char-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        .char-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .char-desc {
+            font-size: 0.8rem;
+            color: #b0c4de;
+        }
+        .btn-play {
+            background: #34A853;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(52, 168, 83, 0.4);
+            transition: all 0.2s ease;
+        }
+        .btn-play:hover {
+            background: #2e9248;
+            transform: scale(1.05);
+        }
+
+        /* Pantalla de Fin de Juego */
+        #end-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            display: none;
+        }
+        #end-overlay h2 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ff5252;
+        }
+        #end-overlay p {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            color: #ccc;
+        }
+        
+        .controls-hint {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Menú de Inicio -->
+    <div id="menu-overlay">
+        <!-- Selector de Idiomas -->
+        <div class="language-selector">
+            <button class="lang-btn active" onclick="setLanguage('es')">Español</button>
+            <button class="lang-btn" onclick="setLanguage('en')">English</button>
+            <button class="lang-btn" onclick="setLanguage('pt')">Português</button>
+        </div>
+
+        <h1>
+            <span class="google-brand">
+                <span class="g-blue">G</span><span class="g-red">o</span><span class="g-yellow">o</span><span class="g-blue">g</span><span class="g-green">l</span><span class="g-red">e</span> Fish
+            </span>
+        </h1>
+        <p class="subtitle" id="txt-subtitle">Elige tu criatura oceánica y sobrevive comiendo peces más pequeños</p>
+        
+        <div class="character-selection">
+            <div class="char-card selected" onclick="selectCharacter('fish', this)">
+                <div class="char-icon">🐠</div>
+                <div class="char-name" data-key="fishName">Pez Payaso</div>
+                <div class="char-desc" data-key="fishDesc">Ágil y rápido. Tamaño inicial pequeño.</div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('shark', this)">
+                <div class="char-icon">🦈</div>
+                <div class="char-name" data-key="sharkName">Tiburón</div>
+                <div class="char-desc" data-key="sharkDesc">Depredador nato. Crece rápido al cazar.</div>
+            </div>
+            <div class="char-card" onclick="selectCharacter('whale', this)">
+                <div class="char-icon">🐋</div>
+                <div class="char-name" data-key="whaleName">Ballena</div>
+                <div class="char-desc" data-key="whaleDesc">Gigante del mar. Come en masa.</div>
+            </div>
+        </div>
+
+        <button class="btn-play" id="btn-play-text" onclick="startGame()">¡Sumergirse!</button>
+    </div>
+
+    <!-- Pantalla Fin del Juego -->
+    <div id="end-overlay">
+        <h2 id="end-title">¡Oh no!</h2>
+        <p id="end-score">Has alcanzado un tamaño de: 1</p>
+        <button class="btn-play" id="btn-restart-text" onclick="resetGame()">Jugar de Nuevo</button>
+    </div>
+
+    <!-- Interfaz de Juego -->
+    <div id="ui">
+        <div class="hud-box">
+            <span><span id="hud-label-creature">Criatura</span>: <span id="hud-creature" style="color: #4285F4;">Pez Payaso</span></span>
+            <span><span id="hud-label-size">Tamaño</span>: <span id="hud-size">1</span></span>
+        </div>
+        <div class="hud-box">
+            <span><span id="hud-label-score">Puntos</span>: <span id="hud-score">0</span></span>
+        </div>
+    </div>
+
+    <div class="controls-hint" id="txt-controls">Mueve el cursor o el dedo para nadar. Come presas más pequeñas y evita las más grandes.</div>
+
+    <canvas id="oceanCanvas"></canvas>
+</div>
+
+<script>
+    // Diccionario de Traducciones
+    const translations = {
+        es: {
+            subtitle: "Elige tu criatura oceánica y sobrevive comiendo peces más pequeños",
+            fishName: "Pez Payaso",
+            fishDesc: "Ágil y rápido. Tamaño inicial pequeño.",
+            sharkName: "Tiburón",
+            sharkDesc: "Depredador nato. Crece rápido al cazar.",
+            whaleName: "Ballena",
+            whaleDesc: "Gigante del mar. Come en masa.",
+            playBtn: "¡Sumergirse!",
+            restartBtn: "Jugar de Nuevo",
+            hudCreature: "Criatura",
+            hudSize: "Tamaño",
+            hudScore: "Puntos",
+            controls: "Mueve el cursor o el dedo para nadar. Come presas más pequeñas y evita las más grandes.",
+            gameOver: "¡Te ha devorado un depredador mayor!",
+            finalSize: "Tamaño final"
+        },
+        en: {
+            subtitle: "Choose your ocean creature and survive by eating smaller fish",
+            fishName: "Clownfish",
+            fishDesc: "Agile and fast. Small starting size.",
+            sharkName: "Shark",
+            sharkDesc: "Born predator. Grows fast when hunting.",
+            whaleName: "Whale",
+            whaleDesc: "Ocean giant. Eats in masses.",
+            playBtn: "Dive In!",
+            restartBtn: "Play Again",
+            hudCreature: "Creature",
+            hudSize: "Size",
+            hudScore: "Score",
+            controls: "Move cursor or finger to swim. Eat smaller prey and avoid larger ones.",
+            gameOver: "You were devoured by a larger predator!",
+            finalSize: "Final size"
+        },
+        pt: {
+            subtitle: "Escolha sua criatura oceânica e sobreviva comendo peixes menores",
+            fishName: "Peixe-Palhaço",
+            fishDesc: "Ágil e rápido. Tamanho inicial pequeno.",
+            sharkName: "Tubarão",
+            sharkDesc: "Predador nato. Cresce rápido caçando.",
+            whaleName: "Baleia",
+            whaleDesc: "Gigante do mar. Come em massa.",
+            playBtn: "Mergulhar!",
+            restartBtn: "Jogar Novamente",
+            hudCreature: "Criatura",
+            hudSize: "Tamanho",
+            hudScore: "Pontos",
+            controls: "Mova o cursor ou o dedo para nadar. Coma presas menores e evite as maiores.",
+            gameOver: "Você foi devorado por um predador maior!",
+            finalSize: "Tamanho final"
+        }
+    };
+
+    let currentLang = 'es';
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        // Actualizar textos de UI
+        document.getElementById('txt-subtitle').innerText = translations[lang].subtitle;
+        document.getElementById('btn-play-text').innerText = translations[lang].playBtn;
+        document.getElementById('btn-restart-text').innerText = translations[lang].restartBtn;
+        document.getElementById('hud-label-creature').innerText = translations[lang].hudCreature;
+        document.getElementById('hud-label-size').innerText = translations[lang].hudSize;
+        document.getElementById('hud-label-score').innerText = translations[lang].hudScore;
+        document.getElementById('txt-controls').innerText = translations[lang].controls;
+
+        // Tarjetas
+        document.querySelector('[data-key="fishName"]').innerText = translations[lang].fishName;
+        document.querySelector('[data-key="fishDesc"]').innerText = translations[lang].fishDesc;
+        document.querySelector('[data-key="sharkName"]').innerText = translations[lang].sharkName;
+        document.querySelector('[data-key="sharkDesc"]').innerText = translations[lang].sharkDesc;
+        document.querySelector('[data-key="whaleName"]').innerText = translations[lang].whaleName;
+        document.querySelector('[data-key="whaleDesc"]').innerText = translations[lang].whaleDesc;
+
+        // Actualizar nombre de criatura actual si aplica
+        if (selectedType === 'fish') player.name = translations[lang].fishName;
+        if (selectedType === 'shark') player.name = translations[lang].sharkName;
+        if (selectedType === 'whale') player.name = translations[lang].whaleName;
+        document.getElementById('hud-creature').innerText = player.name;
+    }
+
+    const canvas = document.getElementById('oceanCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let animationFrameId;
+    let gameRunning = false;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    let selectedType = 'fish';
+    let player = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        size: 15,
+        speed: 0.05,
+        score: 0,
+        emoji: '🐠',
+        name: 'Pez Payaso',
+        vx: 0,
+        vy: 0
+    };
+
+    let targetX = player.x;
+    let targetY = player.y;
+
+    let creatures = [];
+    let particles = [];
+    let bubbles = [];
+
+    const characterData = {
+        fish: { emoji: '🐠', key: 'fishName', baseSize: 15, speed: 0.06 },
+        shark: { emoji: '🦈', key: 'sharkName', baseSize: 25, speed: 0.045 },
+        whale: { emoji: '🐋', key: 'whaleName', baseSize: 35, speed: 0.035 }
+    };
+
+    function selectCharacter(type, element) {
+        document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+        element.classList.add('selected');
+        selectedType = type;
+    }
+
+    function startGame() {
+        document.getElementById('menu-overlay').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('menu-overlay').style.display = 'none';
+        }, 500);
+
+        const data = characterData[selectedType];
+        player.emoji = data.emoji;
+        player.name = translations[currentLang][data.key];
+        player.size = data.baseSize;
+        player.speed = data.speed;
+        player.score = 0;
+        player.x = canvas.width / 2;
+        player.y = canvas.height / 2;
+        targetX = player.x;
+        targetY = player.y;
+
+        document.getElementById('hud-creature').innerText = player.name;
+        document.getElementById('hud-size').innerText = Math.floor(player.size);
+        document.getElementById('hud-score').innerText = player.score;
+
+        creatures = [];
+        particles = [];
+        bubbles = [];
+
+        for(let i=0; i<25; i++) {
+            spawnCreature(true);
+        }
+        for(let i=0; i<15; i++) {
+            bubbles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 4 + 1,
+                speed: Math.random() * 1.5 + 0.5
+            });
+        }
+
+        gameRunning = true;
+        loop();
+    }
+
+    window.addEventListener('mousemove', (e) => {
+        if (!gameRunning) return;
+        targetX = e.clientX;
+        targetY = e.clientY;
+    });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!gameRunning) return;
+        targetX = e.touches[0].clientX;
+        targetY = e.touches[0].clientY;
+    });
+
+    const preyEmojis = ['🦐', '🦀', '🦑', '🐠', '🐟', '🐡', '🐬'];
+
+    function spawnCreature(randomPos = false) {
+        let size;
+        let emoji;
+
+        if (Math.random() < 0.7) {
+            size = Math.max(5, player.size * (0.3 + Math.random() * 0.9));
+        } else {
+            size = player.size * (1.1 + Math.random() * 1.5);
+        }
+
+        emoji = preyEmojis[Math.floor(Math.random() * preyEmojis.length)];
+
+        let x, y;
+        let side = Math.floor(Math.random() * 4);
+        if (randomPos) {
+            x = Math.random() * canvas.width;
+            y = Math.random() * canvas.height;
+        } else {
+            if (side === 0) { x = -50; y = Math.random() * canvas.height; }
+            else if (side === 1) { x = canvas.width + 50; y = Math.random() * canvas.height; }
+            else if (side === 2) { x = Math.random() * canvas.width; y = -50; }
+            else { x = Math.random() * canvas.width; y = canvas.height + 50; }
+        }
+
+        let speed = (2 + Math.random() * 2) * (player.size / size * 0.3 + 0.5);
+        if (speed < 1) speed = 1;
+
+        creatures.push({
+            x: x,
+            y: y,
+            size: size,
+            emoji: emoji,
+            speed: speed,
+            vx: (Math.random() - 0.5) * speed,
+            vy: (Math.random() - 0.5) * speed
+        });
+    }
+
+    function createParticles(x, y) {
+        for(let i=0; i<8; i++) {
+            particles.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
+                radius: Math.random() * 3 + 1,
+                alpha: 1
+            });
+        }
+    }
+
+    function gameOver(reason) {
+        gameRunning = false;
+        cancelAnimationFrame(animationFrameId);
+        document.getElementById('end-title').innerText = reason;
+        document.getElementById('end-score').innerText = `${translations[currentLang].finalSize}: ${Math.floor(player.size)} | ${translations[currentLang].hudScore}: ${player.score}`;
+        document.getElementById('end-overlay').style.display = 'flex';
+    }
+
+    function resetGame() {
+        document.getElementById('end-overlay').style.display = 'none';
+        document.getElementById('menu-overlay').style.display = 'flex';
+        document.getElementById('menu-overlay').style.opacity = '1';
+    }
+
+    function loop() {
+        if (!gameRunning) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        bubbles.forEach(b => {
+            b.y -= b.speed;
+            if (b.y < -10) {
+                b.y = canvas.height + 10;
+                b.x = Math.random() * canvas.width;
+            }
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        let dx = targetX - player.x;
+        let dy = targetY - player.y;
+        player.x += dx * player.speed;
+        player.y += dy * player.speed;
+
+        player.x = Math.max(player.size, Math.min(canvas.width - player.size, player.x));
+        player.y = Math.max(player.size, Math.min(canvas.height - player.size, player.y));
+
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        if (dx < 0) {
+            ctx.scale(-1, 1);
+        }
+        ctx.font = `${Math.max(16, player.size * 1.8)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(player.emoji, 0, 0);
+        ctx.restore();
+
+        if (creatures.length < 30 && Math.random() < 0.05) {
+            spawnCreature();
+        }
+
+        for (let i = creatures.length - 1; i >= 0; i--) {
+            let c = creatures[i];
+
+            c.x += c.vx;
+            c.y += c.vy;
+
+            if (Math.random() < 0.02) {
+                c.vx = (Math.random() - 0.5) * c.speed;
+                c.vy = (Math.random() - 0.5) * c.speed;
+            }
+
+            ctx.save();
+            ctx.translate(c.x, c.y);
+            if (c.vx < 0) {
+                ctx.scale(-1, 1);
+            }
+            ctx.font = `${Math.max(12, c.size * 1.6)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(c.emoji, 0, 0);
+            ctx.restore();
+
+            let dist = Math.hypot(player.x - c.x, player.y - c.y);
+            if (dist < player.size + c.size * 0.6) {
+                if (player.size >= c.size * 0.9) {
+                    player.score += Math.floor(c.size);
+                    player.size += c.size * 0.08;
+                    createParticles(c.x, c.y);
+                    creatures.splice(i, 1);
+
+                    document.getElementById('hud-size').innerText = Math.floor(player.size);
+                    document.getElementById('hud-score').innerText = player.score;
+                } else {
+                    gameOver(translations[currentLang].gameOver);
+                    return;
+                }
+            }
+
+            if (c.x < -150 || c.x > canvas.width + 150 || c.y < -150 || c.y > canvas.height + 150) {
+                creatures.splice(i, 1);
+            }
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.alpha -= 0.03;
+
+            if (p.alpha <= 0) {
+                particles.splice(i, 1);
+            } else {
+                ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        animationFrameId = requestAnimationFrame(loop);
+    }
+</script>
+
+</body>
+</html>
